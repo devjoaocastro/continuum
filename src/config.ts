@@ -10,12 +10,19 @@ export interface ProjectConfig {
   name: string;
 }
 
+export interface SyncConfig {
+  enabled: boolean;
+  repo: string;
+  autoSync: boolean;
+}
+
 export interface Config {
   projects: ProjectConfig[];
   port: number;
   claudeBin?: string;
   model: string;
   ignore: string[];
+  sync?: SyncConfig;
 }
 
 const DEFAULTS: Config = {

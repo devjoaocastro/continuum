@@ -1,59 +1,19 @@
-<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="1280" height="640" fill="#0a0a0a"/>
-
-  <!-- Subtle grid -->
+<svg width="1280" height="320" viewBox="0 0 1280 320" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#ffffff08" stroke-width="1"/>
-    </pattern>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00ffaa" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#0a0a0a" stop-opacity="0"/>
-    </radialGradient>
     <radialGradient id="dotGlow" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#00ffaa" stop-opacity="1"/>
       <stop offset="100%" stop-color="#00cc88" stop-opacity="0.6"/>
     </radialGradient>
   </defs>
 
-  <rect width="1280" height="640" fill="url(#grid)"/>
-  <rect width="1280" height="640" fill="url(#glow)"/>
-
   <!-- Logo dot -->
-  <circle cx="640" cy="220" r="18" fill="url(#dotGlow)"/>
-  <circle cx="640" cy="220" r="28" fill="#00ffaa" fill-opacity="0.12"/>
-  <circle cx="640" cy="220" r="40" fill="#00ffaa" fill-opacity="0.05"/>
+  <circle cx="640" cy="100" r="18" fill="url(#dotGlow)"/>
+  <circle cx="640" cy="100" r="28" fill="#00ffaa" fill-opacity="0.12"/>
+  <circle cx="640" cy="100" r="40" fill="#00ffaa" fill-opacity="0.05"/>
 
   <!-- Wordmark -->
-  <text x="640" y="310" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="72" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="-2">Continuum</text>
+  <text x="640" y="190" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="72" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="-2">Continuum</text>
 
   <!-- Tagline -->
-  <text x="640" y="368" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="26" font-weight="400" fill="#888888" text-anchor="middle" letter-spacing="0.5">Your development memory. For life.</text>
-
-  <!-- Divider -->
-  <line x1="540" y1="408" x2="740" y2="408" stroke="#222222" stroke-width="1"/>
-
-  <!-- Tags -->
-  <text x="395" y="460" font-family="'SF Mono', 'Fira Code', monospace" font-size="15" fill="#00ffaa" text-anchor="middle">MCP</text>
-  <text x="395" y="480" font-family="'SF Mono', 'Fira Code', monospace" font-size="12" fill="#444444" text-anchor="middle">universal</text>
-
-  <text x="510" y="460" font-family="'SF Mono', 'Fira Code', monospace" font-size="15" fill="#00ffaa" text-anchor="middle">SQLite</text>
-  <text x="510" y="480" font-family="'SF Mono', 'Fira Code', monospace" font-size="12" fill="#444444" text-anchor="middle">local-first</text>
-
-  <text x="640" y="460" font-family="'SF Mono', 'Fira Code', monospace" font-size="15" fill="#00ffaa" text-anchor="middle">Claude CLI</text>
-  <text x="640" y="480" font-family="'SF Mono', 'Fira Code', monospace" font-size="12" fill="#444444" text-anchor="middle">zero cost</text>
-
-  <text x="770" y="460" font-family="'SF Mono', 'Fira Code', monospace" font-size="15" fill="#00ffaa" text-anchor="middle">Bun</text>
-  <text x="770" y="480" font-family="'SF Mono', 'Fira Code', monospace" font-size="12" fill="#444444" text-anchor="middle">zero deps</text>
-
-  <text x="885" y="460" font-family="'SF Mono', 'Fira Code', monospace" font-size="15" fill="#00ffaa" text-anchor="middle">FSEvents</text>
-  <text x="885" y="480" font-family="'SF Mono', 'Fira Code', monospace" font-size="12" fill="#444444" text-anchor="middle">realtime</text>
-
-  <!-- Bottom terminal hint -->
-  <rect x="440" y="520" width="400" height="52" rx="8" fill="#111111" stroke="#1e1e1e" stroke-width="1"/>
-  <text x="460" y="542" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="14" fill="#555555">$</text>
-  <text x="476" y="542" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="14" fill="#00ffaa">bunx continuum init</text>
-  <text x="460" y="562" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="14" fill="#555555">$</text>
-  <text x="476" y="562" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="14" fill="#666666">continuum start</text>
+  <text x="640" y="248" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="24" font-weight="400" fill="#888888" text-anchor="middle" letter-spacing="0.5">Your development memory. For life.</text>
 </svg>

@@ -7,6 +7,7 @@ import { extractFromCommit } from "./extractor.js";
 import { addMemory } from "./db.js";
 import { getStateDir } from "./config.js";
 import type { Config, ProjectConfig } from "./config.js";
+import { syncAuto } from "./sync.js";
 
 const c = {
   green: (s: string) => `\x1b[32m${s}\x1b[0m`,
@@ -85,6 +86,9 @@ async function processProject(
   }
 
   setLastHash(project.name, currentHash);
+
+  // Auto-sync after extraction
+  syncAuto(db).catch(() => {});
 }
 
 export async function startDaemon(config: Config, db: Database, claudeBin: string): Promise<void> {

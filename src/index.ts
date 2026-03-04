@@ -9,6 +9,7 @@ import { startDaemon } from "./daemon.js";
 import { createHttpHandler, runStdioMcp } from "./mcp.js";
 import { findClaudeBin } from "./claude-bin.js";
 import { generateSnapshot } from "./snapshot.js";
+import { syncInit, syncPush, syncPull } from "./sync.js";
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
@@ -346,6 +347,18 @@ if (cmd === "--mcp-only" || rest.includes("--mcp-only")) {
   cmdAdd(parts.join(" "), project);
 } else if (cmd === "snapshot") {
   cmdSnapshot(rest[0]);
+} else if (cmd === "sync") {
+  const sub = rest[0];
+  const db = openDb();
+  if (sub === "init") {
+    syncInit();
+  } else if (sub === "push") {
+    syncPush(db);
+  } else if (sub === "pull") {
+    syncPull(db);
+  } else {
+    console.log(`  Usage: continuum sync <init|push|pull>`);
+  }
 } else if (cmd === "--help" || cmd === "-h") {
   console.log(`
   ${bold("continuum")} — Universal AI memory daemon
@@ -356,6 +369,9 @@ if (cmd === "--mcp-only" || rest.includes("--mcp-only")) {
     continuum status                  Show tracked projects and memory counts
     continuum snapshot [project]      Generate CONTINUUM.md — project consciousness
     continuum add <project> <text>    Manually save a memory
+    continuum sync init               Setup GitHub sync (private repo)
+    continuum sync push               Push memories to GitHub
+    continuum sync pull               Pull memories from GitHub
     continuum --mcp-only              Stdio MCP (used by AI tools internally)
 
   ${cyan("MCP tools (available in any AI tool):")}

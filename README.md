@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Continuum" width="100%"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner.svg"/>
+    <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg"/>
+    <img src="assets/banner.svg" alt="Continuum" width="600"/>
+  </picture>
 </p>
 
 <p align="center">
@@ -111,7 +115,75 @@ continuum start                    # Start daemon + MCP server
 continuum snapshot [project]       # Generate living CONTINUUM.md from memories
 continuum status                   # Show projects and memory counts
 continuum add <project> <memory>   # Manually save something important
+continuum sync init                # Setup GitHub sync (private repo)
+continuum sync push                # Push memories to GitHub
+continuum sync pull                # Pull memories from GitHub
 ```
+
+---
+
+## Cross-device sync
+
+Your memories can travel between machines using a private GitHub repo as backend. No cloud service, no new accounts — just git.
+
+```bash
+# First time: creates a private repo and configures sync
+continuum sync init
+
+# Push your memories to GitHub
+continuum sync push
+
+# On another machine: pull memories from GitHub
+continuum sync pull
+```
+
+**How it works:** Memories are exported as JSON files (one per project) into a private `<your-username>/continuum-memories` repo. The format is git-diffable, so you get full history of your memory evolution for free.
+
+**Auto-sync:** Enable in `~/.continuum/config.json` to push automatically after every extraction:
+
+```json
+{
+  "sync": {
+    "enabled": true,
+    "repo": "youruser/continuum-memories",
+    "autoSync": true
+  }
+}
+```
+
+**Requirements:** [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated.
+
+---
+
+## Configuration
+
+All settings live in `~/.continuum/config.json`:
+
+```json
+{
+  "projects": [
+    { "path": "/Users/you/projects/myapp", "name": "myapp" }
+  ],
+  "port": 3100,
+  "model": "claude-haiku-4-5-20251001",
+  "ignore": [".env", "*.pem", "*.key", "node_modules", ".git", "dist"],
+  "sync": {
+    "enabled": false,
+    "repo": "",
+    "autoSync": false
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `projects` | `[]` | Git repos to watch (auto-detected on `init`) |
+| `port` | `3100` | HTTP MCP server port |
+| `model` | `claude-haiku-4-5-20251001` | Claude model for extraction |
+| `ignore` | *(see above)* | File patterns to skip in diffs |
+| `sync.enabled` | `false` | Enable GitHub sync |
+| `sync.repo` | `""` | GitHub repo for sync (set by `sync init`) |
+| `sync.autoSync` | `false` | Auto-push after every extraction |
 
 ---
 
