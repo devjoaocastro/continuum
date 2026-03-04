@@ -1,0 +1,119 @@
+import { watch, existsSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
+import { randomUUID } from "crypto";
+import type { Database } from "bun:sqlite";
+import { isGitRepo, getCurrentHash, getNewCommits } from "./git.js";
+import { extractFromCommit } from "./extractor.js";
+import { addMemory } from "./db.js";
+import { getStateDir } from "./config.js";
+import type { Config, ProjectConfig } from "./config.js";
+
+const c = {
+  green: (s: string) => `\x1b[32m${s}\x1b[0m`,
+  cyan: (s: string) => `\x1b[36m${s}\x1b[0m`,
+  gray: (s: string) => `\x1b[90m${s}\x1b[0m`,
+  dim: (s: string) => `\x1b[2m${s}\x1b[0m`,
+  yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
+};
+
+function getLastHash(project: string): string | undefined {
+  const path = join(getStateDir(), `${project}.json`);
+  if (!existsSync(path)) return undefined;
+  try {
+    return (JSON.parse(readFileSync(path, "utf8")) as { lastHash?: string }).lastHash;
+  } catch {
+    return undefined;
+  }
+}
+
+function setLastHash(project: string, hash: string): void {
+  writeFileSync(join(getStateDir(), `${project}.json`), JSON.stringify({ lastHash: hash }));
+}
+
+async function processProject(
+  project: ProjectConfig,
+  db: Database,
+  config: Config,
+  claudeBin: string
+): Promise<void> {
+  if (!isGitRepo(project.path)) return;
+
+  const currentHash = getCurrentHash(project.path);
+  if (!currentHash) return;
+
+  const lastHash = getLastHash(project.name);
+  if (lastHash === currentHash) return;
+
+  const commits = getNewCommits(project.path, lastHash);
+  if (commits.length === 0) {
+    setLastHash(project.name, currentHash);
+    return;
+  }
+
+  console.log(`\n  ${c.cyan("◉")} ${c.cyan(project.name)} — ${commits.length} new commit(s)`);
+
+  for (const commit of [...commits].reverse()) {
+    const t = new Date().toLocaleTimeString("en", { hour12: false });
+    process.stdout.write(
+      `  ${c.gray(t)}  ${c.dim(commit.hash.slice(0, 7))} ${c.gray(commit.message.slice(0, 55))} ...`
+    );
+
+    const extracted = extractFromCommit(commit, claudeBin, config.model);
+
+    if (!extracted) {
+      process.stdout.write(` ${c.gray("skip")}\n`);
+      continue;
+    }
+
+    const items = [
+      ...extracted.decisions.map((d) => `[decision] ${d}`),
+      ...extracted.patterns.map((p) => `[pattern] ${p}`),
+      extracted.summary ? `[commit] ${extracted.summary}` : "",
+    ].filter(Boolean);
+
+    for (const content of items) {
+      addMemory(db, {
+        id: randomUUID(),
+        project: project.name,
+        content,
+        source: "git_commit",
+        metadata: { hash: commit.hash, message: commit.message },
+      });
+    }
+
+    process.stdout.write(` ${c.green("✓")} ${items.length} memories\n`);
+  }
+
+  setLastHash(project.name, currentHash);
+}
+
+export async function startDaemon(config: Config, db: Database, claudeBin: string): Promise<void> {
+  console.log(`\n  ${c.dim("Watching")} ${config.projects.length} project(s)...\n`);
+
+  // Initial scan of all projects
+  for (const project of config.projects) {
+    await processProject(project, db, config, claudeBin);
+  }
+
+  // Watch .git/COMMIT_EDITMSG for each project — fires on every commit
+  for (const project of config.projects) {
+    const commitMsgPath = join(project.path, ".git", "COMMIT_EDITMSG");
+    if (!existsSync(commitMsgPath)) {
+      console.log(`  ${c.yellow("!")} ${project.name}: not a git repo yet, skipping watch`);
+      continue;
+    }
+
+    watch(commitMsgPath, () => {
+      processProject(project, db, config, claudeBin).catch(console.error);
+    });
+
+    console.log(`  ${c.green("✓")} ${c.dim("watching")} ${project.name}`);
+  }
+
+  // Periodic rescan every 5 min (catches manual git pulls, etc.)
+  setInterval(async () => {
+    for (const project of config.projects) {
+      await processProject(project, db, config, claudeBin);
+    }
+  }, 5 * 60 * 1000);
+}

@@ -1,0 +1,16 @@
+{
+  "name": "continuum",
+  "version": "0.1.0",
+  "description": "Universal AI memory daemon — your context, everywhere",
+  "bin": {
+    "continuum": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build --compile src/index.ts --outfile continuum"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
