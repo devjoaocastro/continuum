@@ -4,12 +4,14 @@ import type { Database } from "bun:sqlite";
 import { join } from "path";
 import { randomUUID } from "crypto";
 import { loadConfig, saveConfig, HOME, type Config } from "./config.js";
-import { openDb, countMemories, addMemory, getProjects, getContext } from "./db.js";
+import { openDb, countMemories, addMemory, getProjects, getContext, getAllMemories } from "./db.js";
 import { startDaemon } from "./daemon.js";
 import { createHttpHandler, runStdioMcp } from "./mcp.js";
 import { findClaudeBin } from "./claude-bin.js";
 import { generateSnapshot } from "./snapshot.js";
 import { syncInit, syncPush, syncPull } from "./sync.js";
+import { rankByRelevance } from "./search.js";
+import { getDeveloperDNA } from "./intelligence.js";
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
@@ -347,6 +349,49 @@ if (cmd === "--mcp-only" || rest.includes("--mcp-only")) {
   cmdAdd(parts.join(" "), project);
 } else if (cmd === "snapshot") {
   cmdSnapshot(rest[0]);
+} else if (cmd === "search" && rest.length > 0) {
+  const db = openDb();
+  const query = rest.join(" ");
+  const allMems = getAllMemories(db, 500);
+  const ranked = rankByRelevance(query, allMems, 10);
+  if (ranked.length === 0) {
+    console.log(`\n  ${yellow("!")} No memories found matching "${query}"\n`);
+  } else {
+    console.log(`\n  ${bold("◉ Search:")} ${gray(query)}\n`);
+    console.log(`  Found ${green(String(ranked.length))} result(s):\n`);
+    for (const r of ranked) {
+      console.log(`  ${cyan("›")} ${r}`);
+    }
+    console.log();
+  }
+} else if (cmd === "dna") {
+  const db = openDb();
+  const dna = getDeveloperDNA(db);
+  console.log(`\n  ${bold("◉ Developer DNA")}\n`);
+  console.log(`  ${dim("Career span:")}  ${dna.oldestMemory ?? "N/A"} → ${dna.newestMemory ?? "now"}`);
+  console.log(`  ${dim("Projects:")}     ${dna.totalProjects}`);
+  console.log(`  ${dim("Memories:")}     ${dna.totalMemories}`);
+  console.log(`  ${dim("Evolutions:")}   ${dna.evolutionCount}`);
+  console.log(`  ${dim("Style:")}        ${dna.decisionStyle}\n`);
+  if (dna.techStack.length > 0) {
+    console.log(`  ${cyan("Core stack")} (used across projects):`);
+    console.log(`  ${dna.techStack.join(", ")}\n`);
+  }
+  if (dna.topTags.length > 0) {
+    console.log(`  ${cyan("Top technologies:")}`);
+    for (const t of dna.topTags.slice(0, 10)) {
+      const bar = green("█".repeat(Math.min(t.count, 20)));
+      console.log(`  ${t.tag.padEnd(20)} ${bar} ${t.count}`);
+    }
+    console.log();
+  }
+  if (dna.patternStrength.length > 0) {
+    console.log(`  ${cyan("Proven patterns")} (reinforced by experience):`);
+    for (const p of dna.patternStrength) {
+      console.log(`  ${green("✓")} ${p.pattern} ${gray(`(${p.reinforcements}x)`)}`);
+    }
+    console.log();
+  }
 } else if (cmd === "sync") {
   const sub = rest[0];
   const db = openDb();
@@ -369,16 +414,21 @@ if (cmd === "--mcp-only" || rest.includes("--mcp-only")) {
     continuum status                  Show tracked projects and memory counts
     continuum snapshot [project]      Generate CONTINUUM.md — project consciousness
     continuum add <project> <text>    Manually save a memory
+    continuum search <query>          Search all memories by keywords
+    continuum dna                     Your developer profile and career stats
     continuum sync init               Setup GitHub sync (private repo)
     continuum sync push               Push memories to GitHub
     continuum sync pull               Pull memories from GitHub
     continuum --mcp-only              Stdio MCP (used by AI tools internally)
 
-  ${cyan("MCP tools (available in any AI tool):")}
-    get_context [project]       Load context — call at session start
-    search_context <query>      Semantic search through memories
-    add_memory <content>        Save a decision or insight
+  ${cyan("MCP tools (7 tools, available in any AI tool):")}
+    get_context                 Load project context at session start
+    search_context              Search memories with TF-IDF ranking
+    add_memory                  Save a decision or insight
     list_projects               List tracked projects
+    cross_project_insights      Knowledge from other projects
+    developer_dna               Your developer profile
+    memory_timeline             Chronological knowledge evolution
 
   ${dim("After init, every git commit is automatically extracted and")}
   ${dim("injected into all your AI tools via MCP. Zero config.")}

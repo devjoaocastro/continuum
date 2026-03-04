@@ -9,6 +9,7 @@ export function openDb(): Database {
   if (_db) return _db;
   mkdirSync(CONFIG_DIR, { recursive: true });
   const db = new Database(join(CONFIG_DIR, "memories.db"));
+  // Create base table
   db.exec(`
     CREATE TABLE IF NOT EXISTS memories (
       id TEXT PRIMARY KEY,
@@ -16,17 +17,32 @@ export function openDb(): Database {
       content TEXT NOT NULL,
       source TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      metadata TEXT DEFAULT '{}',
-      -- Evolution fields
-      importance REAL NOT NULL DEFAULT 50.0,
-      reinforced_count INTEGER NOT NULL DEFAULT 0,
-      last_reinforced TEXT,
-      tags TEXT DEFAULT '[]',
-      superseded_by TEXT,
-      sentiment TEXT DEFAULT 'neutral'
+      metadata TEXT DEFAULT '{}'
     );
     CREATE INDEX IF NOT EXISTS idx_project ON memories(project);
     CREATE INDEX IF NOT EXISTS idx_created ON memories(project, created_at DESC);
+  `);
+
+  // Migrate: add evolution columns if missing
+  const cols = db.prepare(`PRAGMA table_info(memories)`).all() as { name: string }[];
+  const colNames = new Set(cols.map((c) => c.name));
+
+  const migrations: [string, string][] = [
+    ["importance", "ALTER TABLE memories ADD COLUMN importance REAL NOT NULL DEFAULT 50.0"],
+    ["reinforced_count", "ALTER TABLE memories ADD COLUMN reinforced_count INTEGER NOT NULL DEFAULT 0"],
+    ["last_reinforced", "ALTER TABLE memories ADD COLUMN last_reinforced TEXT"],
+    ["tags", "ALTER TABLE memories ADD COLUMN tags TEXT DEFAULT '[]'"],
+    ["superseded_by", "ALTER TABLE memories ADD COLUMN superseded_by TEXT"],
+    ["sentiment", "ALTER TABLE memories ADD COLUMN sentiment TEXT DEFAULT 'neutral'"],
+  ];
+
+  for (const [col, sql] of migrations) {
+    if (!colNames.has(col)) {
+      db.exec(sql);
+    }
+  }
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_importance ON memories(project, importance DESC);
     CREATE INDEX IF NOT EXISTS idx_tags ON memories(tags);
   `);
