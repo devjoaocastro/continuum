@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/devjoaocastro/continuum/blob/main/LICENSE"><img src="https://img.shields.io/badge/MIT-111111?style=flat-square&label=license&labelColor=00ffaa&color=111111" alt="License"/></a>
-  <img src="https://img.shields.io/badge/Bun-111111?style=flat-square&label=runtime&labelColor=00ffaa&color=111111" alt="Bun"/>
-  <img src="https://img.shields.io/badge/MCP-111111?style=flat-square&label=protocol&labelColor=00ffaa&color=111111" alt="MCP"/>
-  <img src="https://img.shields.io/badge/SQLite-111111?style=flat-square&label=storage&labelColor=00ffaa&color=111111" alt="SQLite"/>
-  <img src="https://img.shields.io/badge/none-111111?style=flat-square&label=cloud&labelColor=00ffaa&color=111111" alt="No cloud"/>
+  <a href="https://github.com/devjoaocastro/continuum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-00ffaa?style=flat-square&labelColor=222" alt="License"/></a>
+  <img src="https://img.shields.io/badge/runtime-Bun-00ffaa?style=flat-square&labelColor=222" alt="Bun"/>
+  <img src="https://img.shields.io/badge/protocol-MCP-00ffaa?style=flat-square&labelColor=222" alt="MCP"/>
+  <img src="https://img.shields.io/badge/storage-SQLite-00ffaa?style=flat-square&labelColor=222" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/cloud-none-00ffaa?style=flat-square&labelColor=222" alt="No cloud"/>
 </p>
 
 <br/>
