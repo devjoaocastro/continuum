@@ -1,4 +1,18 @@
-# ◉ Continuum
+<p align="center">
+  <img src="assets/banner.svg" alt="Continuum" width="100%"/>
+</p>
+
+<p align="center">
+  <a href="https://github.com/devjoaocastro/continuum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-00ffaa?style=flat-square" alt="License"/></a>
+  <img src="https://img.shields.io/badge/runtime-Bun-00ffaa?style=flat-square" alt="Bun"/>
+  <img src="https://img.shields.io/badge/protocol-MCP%202025--03--26-00ffaa?style=flat-square" alt="MCP"/>
+  <img src="https://img.shields.io/badge/storage-local%20SQLite-00ffaa?style=flat-square" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/cloud-none-00ffaa?style=flat-square" alt="No cloud"/>
+</p>
+
+---
+
+# Continuum
 
 **Your development memory. For life.**
 
