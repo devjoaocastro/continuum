@@ -5,6 +5,8 @@ export interface ExtractedContext {
   decisions: string[];
   patterns: string[];
   summary: string;
+  tags: string[];
+  sentiment: "positive" | "negative" | "neutral";
 }
 
 const TRIVIAL_PATTERNS = [
@@ -82,13 +84,17 @@ Return ONLY valid JSON, no markdown fences, no explanation:
 {
   "decisions": ["max 3 items under 100 chars — WHY this was done, not what"],
   "patterns": ["max 2 items under 100 chars — conventions or patterns established"],
-  "summary": "one sentence under 120 chars describing the change"
+  "summary": "one sentence under 120 chars describing the change",
+  "tags": ["max 5 — technologies, concepts, domains mentioned (e.g. 'react', 'auth', 'performance', 'docker', 'api')"],
+  "sentiment": "positive | negative | neutral — was this a win, a fix for pain, or routine?"
 }
 
 Rules:
 - Focus on WHY, not WHAT
 - decisions = architectural choices, tradeoffs, reasoning
 - patterns = reusable conventions others should follow
+- tags = lowercase, single-word or hyphenated (e.g. "cloudflare-workers", "sqlite", "auth")
+- sentiment: positive = improvement/win, negative = fixing pain/bugs, neutral = routine
 - NEVER include file paths, secrets, passwords, tokens
 - If trivial change, return empty arrays and brief summary`.trim();
 }
@@ -129,6 +135,12 @@ export function extractFromCommit(
         ? parsed.patterns.filter((p) => typeof p === "string")
         : [],
       summary: typeof parsed.summary === "string" ? parsed.summary : commit.message,
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.filter((t) => typeof t === "string").map((t) => t.toLowerCase())
+        : [],
+      sentiment: (parsed.sentiment === "positive" || parsed.sentiment === "negative")
+        ? parsed.sentiment
+        : "neutral",
     };
   } catch {
     return null;

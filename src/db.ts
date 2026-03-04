@@ -16,10 +16,19 @@ export function openDb(): Database {
       content TEXT NOT NULL,
       source TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      metadata TEXT DEFAULT '{}'
+      metadata TEXT DEFAULT '{}',
+      -- Evolution fields
+      importance REAL NOT NULL DEFAULT 50.0,
+      reinforced_count INTEGER NOT NULL DEFAULT 0,
+      last_reinforced TEXT,
+      tags TEXT DEFAULT '[]',
+      superseded_by TEXT,
+      sentiment TEXT DEFAULT 'neutral'
     );
     CREATE INDEX IF NOT EXISTS idx_project ON memories(project);
     CREATE INDEX IF NOT EXISTS idx_created ON memories(project, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_importance ON memories(project, importance DESC);
+    CREATE INDEX IF NOT EXISTS idx_tags ON memories(tags);
   `);
   _db = db;
   return db;
@@ -83,4 +92,78 @@ export function countMemories(db: Database, project?: string): number {
     return (db.prepare(`SELECT COUNT(*) as n FROM memories WHERE project = ?`).get(project) as { n: number }).n;
   }
   return (db.prepare(`SELECT COUNT(*) as n FROM memories`).get() as { n: number }).n;
+}
+
+// ── Evolution queries ──────────────────────────────────────────────────────────
+
+export interface FullMemory {
+  id: string;
+  project: string;
+  content: string;
+  source: string;
+  created_at: string;
+  metadata: string;
+  importance: number;
+  reinforced_count: number;
+  last_reinforced: string | null;
+  tags: string;
+  superseded_by: string | null;
+  sentiment: string;
+}
+
+export function getFullMemories(db: Database, project?: string, limit = 200): FullMemory[] {
+  if (project) {
+    return db.prepare(
+      `SELECT * FROM memories WHERE project = ? AND superseded_by IS NULL
+       ORDER BY importance DESC, created_at DESC LIMIT ?`
+    ).all(project, limit) as FullMemory[];
+  }
+  return db.prepare(
+    `SELECT * FROM memories WHERE superseded_by IS NULL
+     ORDER BY importance DESC, created_at DESC LIMIT ?`
+  ).all(limit) as FullMemory[];
+}
+
+export function reinforceMemory(db: Database, id: string, boost = 10): void {
+  db.prepare(
+    `UPDATE memories SET
+       reinforced_count = reinforced_count + 1,
+       last_reinforced = datetime('now'),
+       importance = MIN(100, importance + ?)
+     WHERE id = ?`
+  ).run(boost, id);
+}
+
+export function supersedeMemory(db: Database, oldId: string, newId: string): void {
+  db.prepare(`UPDATE memories SET superseded_by = ? WHERE id = ?`).run(newId, oldId);
+}
+
+export function decayMemories(db: Database): number {
+  const result = db.prepare(
+    `UPDATE memories SET importance = MAX(5, importance - 2)
+     WHERE superseded_by IS NULL
+       AND importance > 5
+       AND last_reinforced IS NULL
+       AND created_at < datetime('now', '-30 days')`
+  ).run();
+  return result.changes;
+}
+
+export function getMemoriesByTag(db: Database, tag: string, limit = 20): FullMemory[] {
+  return db.prepare(
+    `SELECT * FROM memories
+     WHERE tags LIKE ? AND superseded_by IS NULL
+     ORDER BY importance DESC LIMIT ?`
+  ).all(`%"${tag}"%`, limit) as FullMemory[];
+}
+
+export function getCrossProjectMemories(db: Database, tags: string[], excludeProject: string, limit = 10): FullMemory[] {
+  const conditions = tags.map(() => `tags LIKE ?`).join(" OR ");
+  if (!conditions) return [];
+  const params = [...tags.map((t) => `%"${t}"%`), excludeProject, limit];
+  return db.prepare(
+    `SELECT * FROM memories
+     WHERE (${conditions}) AND project != ? AND superseded_by IS NULL
+     ORDER BY importance DESC LIMIT ?`
+  ).all(...params) as FullMemory[];
 }

@@ -8,6 +8,8 @@ import { addMemory } from "./db.js";
 import { getStateDir } from "./config.js";
 import type { Config, ProjectConfig } from "./config.js";
 import { syncAuto } from "./sync.js";
+import { processEvolution, runMaintenance } from "./intelligence.js";
+import type { FullMemory } from "./db.js";
 
 const c = {
   green: (s: string) => `\x1b[32m${s}\x1b[0m`,
@@ -72,14 +74,30 @@ async function processProject(
       extracted.summary ? `[commit] ${extracted.summary}` : "",
     ].filter(Boolean);
 
+    const savedIds: string[] = [];
     for (const content of items) {
-      addMemory(db, {
-        id: randomUUID(),
-        project: project.name,
+      const memId = randomUUID();
+      savedIds.push(memId);
+
+      // Store with tags and sentiment
+      db.prepare(
+        `INSERT OR REPLACE INTO memories (id, project, content, source, metadata, tags, sentiment)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        memId,
+        project.name,
         content,
-        source: "git_commit",
-        metadata: { hash: commit.hash, message: commit.message },
-      });
+        "git_commit",
+        JSON.stringify({ hash: commit.hash, message: commit.message }),
+        JSON.stringify(extracted.tags),
+        extracted.sentiment,
+      );
+    }
+
+    // Run evolution detection on each new memory
+    for (const memId of savedIds) {
+      const row = db.prepare(`SELECT * FROM memories WHERE id = ?`).get(memId) as FullMemory | null;
+      if (row) processEvolution(db, row);
     }
 
     process.stdout.write(` ${c.green("✓")} ${items.length} memories\n`);
@@ -120,4 +138,12 @@ export async function startDaemon(config: Config, db: Database, claudeBin: strin
       await processProject(project, db, config, claudeBin);
     }
   }, 5 * 60 * 1000);
+
+  // Memory maintenance every hour (temporal decay)
+  setInterval(() => {
+    const { decayed } = runMaintenance(db);
+    if (decayed > 0) {
+      console.log(`  ${c.dim("⟳")} ${c.gray(`Memory maintenance: ${decayed} memories decayed`)}`);
+    }
+  }, 60 * 60 * 1000);
 }

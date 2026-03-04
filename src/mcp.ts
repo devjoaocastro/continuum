@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import type { Database } from "bun:sqlite";
 import { getContext, searchMemories, addMemory, getProjects, getMostRecentProject, countMemories, getAllMemories } from "./db.js";
 import { rankByRelevance } from "./search.js";
+import { getCrossProjectInsights, getDeveloperDNA, getTimeline } from "./intelligence.js";
 
 const PROTOCOL_VERSION = "2025-03-26";
 const SERVER_INFO = { name: "continuum", version: "0.1.0" };
@@ -54,6 +55,35 @@ const TOOLS = [
     name: "list_projects",
     description: "List all projects Continuum is tracking, with memory counts.",
     inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "cross_project_insights",
+    description:
+      "Get relevant knowledge from OTHER projects that applies to the current one. Continuum detects shared technologies and patterns across your projects and surfaces what you learned elsewhere.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project: { type: "string", description: "Current project name — insights from other projects will be returned" },
+      },
+      required: ["project"],
+    },
+  },
+  {
+    name: "developer_dna",
+    description:
+      "Your developer profile — technologies you use most, decision patterns, career stats, and how your knowledge has evolved over time. A living portrait of how you build software.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "memory_timeline",
+    description:
+      "Get a chronological timeline of your knowledge evolution — decisions made, patterns established, knowledge that was reinforced or superseded over time.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Number of timeline events (default: 20)" },
+      },
+    },
   },
 ];
 
@@ -150,6 +180,58 @@ async function dispatch(req: JsonRpcRequest, db: Database): Promise<unknown> {
           if (projects.length === 0) return ok(id, { content: [{ type: "text", text: "No projects tracked yet." }] });
           const lines = projects.map((p) => `${p} (${countMemories(db, p)} memories)`);
           return ok(id, { content: [{ type: "text", text: lines.join("\n") }] });
+        }
+
+        case "cross_project_insights": {
+          const project = args["project"] as string;
+          if (!project?.trim()) return rpcErr(id, -32602, "project is required");
+          const insights = getCrossProjectInsights(db, project);
+          if (insights.length === 0) {
+            return ok(id, {
+              content: [{ type: "text", text: `No cross-project insights yet for "${project}". Build more memories across projects.` }],
+            });
+          }
+          const lines = insights.map(
+            (i) => `**From ${i.fromProject}:** ${i.memory}\n  _${i.relevance}_`
+          );
+          return ok(id, {
+            content: [{ type: "text", text: `## Cross-project insights for ${project}\n\n${lines.join("\n\n")}` }],
+          });
+        }
+
+        case "developer_dna": {
+          const dna = getDeveloperDNA(db);
+          const sections = [
+            `## Developer DNA\n`,
+            `**Career span:** ${dna.oldestMemory ?? "N/A"} → ${dna.newestMemory ?? "now"}`,
+            `**Projects:** ${dna.totalProjects} | **Memories:** ${dna.totalMemories} | **Evolutions:** ${dna.evolutionCount}`,
+            `**Style:** ${dna.decisionStyle}\n`,
+            dna.techStack.length > 0
+              ? `**Core stack** (used across projects): ${dna.techStack.join(", ")}`
+              : "",
+            dna.topTags.length > 0
+              ? `**Top technologies:**\n${dna.topTags.map((t) => `  ${t.tag} (${t.count}x)`).join("\n")}`
+              : "",
+            dna.patternStrength.length > 0
+              ? `**Proven patterns** (reinforced by experience):\n${dna.patternStrength.map((p) => `  ${p.pattern} (${p.reinforcements}x reinforced)`).join("\n")}`
+              : "",
+          ].filter(Boolean);
+          return ok(id, { content: [{ type: "text", text: sections.join("\n") }] });
+        }
+
+        case "memory_timeline": {
+          const limit = Math.min((args["limit"] as number | undefined) ?? 20, 50);
+          const events = getTimeline(db, limit);
+          if (events.length === 0) {
+            return ok(id, { content: [{ type: "text", text: "No timeline events yet." }] });
+          }
+          const lines = events.map((e) => {
+            const icon = e.type === "milestone" ? "★" : e.type === "evolution" ? "↻" : e.type === "pattern" ? "◆" : "◉";
+            return `${icon} **${e.date}** [${e.project}] ${e.content}`;
+          });
+          return ok(id, {
+            content: [{ type: "text", text: `## Knowledge Timeline\n\n${lines.join("\n")}` }],
+          });
         }
 
         default:
