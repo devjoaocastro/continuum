@@ -1,10 +1,5 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/banner.svg"/>
-    <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg"/>
-    <img src="assets/banner.svg" alt="Continuum" width="600"/>
-  </picture>
-</p>
+<h1 align="center">◉ Continuum</h1>
+<p align="center"><strong>Your development memory. For life.</strong></p>
 
 <p align="center">
   <a href="https://github.com/devjoaocastro/continuum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-00ffaa?style=flat-square" alt="License"/></a>
@@ -15,10 +10,6 @@
 </p>
 
 ---
-
-# Continuum
-
-**Your development memory. For life.**
 
 You'll spend 10 years building software. Thousands of decisions. Hundreds of projects.
 
