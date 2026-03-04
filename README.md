@@ -4,183 +4,122 @@
 <p align="center">
   <a href="https://github.com/devjoaocastro/continuum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-00ffaa?style=flat-square" alt="License"/></a>
   <img src="https://img.shields.io/badge/runtime-Bun-00ffaa?style=flat-square" alt="Bun"/>
-  <img src="https://img.shields.io/badge/protocol-MCP%202025--03--26-00ffaa?style=flat-square" alt="MCP"/>
-  <img src="https://img.shields.io/badge/storage-local%20SQLite-00ffaa?style=flat-square" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/protocol-MCP-00ffaa?style=flat-square" alt="MCP"/>
+  <img src="https://img.shields.io/badge/storage-SQLite-00ffaa?style=flat-square" alt="SQLite"/>
   <img src="https://img.shields.io/badge/cloud-none-00ffaa?style=flat-square" alt="No cloud"/>
 </p>
 
+<br/>
+
+<p align="center">
+<code>bunx continuum init && bunx continuum start</code>
+</p>
+
+<p align="center">
+Every commit you make is captured, understood, and kept.<br/>
+Forever. Locally. Privately. Across every AI tool you use.
+</p>
+
+<br/>
+
 ---
 
-You'll spend 10 years building software. Thousands of decisions. Hundreds of projects.
+<br/>
 
-Why you chose Postgres over MongoDB. Why you rewrote the auth system. Why that one pattern works in this codebase and breaks in every other. The bug that took 3 days to find. The insight that changed how you think about the problem.
+## The problem
 
-None of it is written down anywhere. Most of it is already gone.
+You open a project you haven't touched in 6 months. Your AI assistant asks:
 
-**Continuum remembers.**
+> *"What framework is this? What's the auth strategy? Why is there a serial queue here?"*
 
-```bash
-bunx continuum init
-bunx continuum start
+You spent **3 days** figuring out that serial queue. You remember the pain, but not the solution.
+
+**It's gone.** Lost in a commit message that says `fix: streaming deadlock`.
+
+<br/>
+
+## What Continuum does
+
+```
+  $ git commit -m "fix: replace Docker with E2B microVMs"
+
+  ◉ myproject — 1 new commit(s)
+  09:41:22  a1b2c3d  fix: replace Docker with E2B microVMs  ...✓ 3 memories
+
+    [decision] Replaced Docker containers with E2B Firecracker microVMs —
+               Docker cold start was 4-6s blocking UX, E2B boots in 400ms.
+               10x improvement. Trade-off: E2B is a paid service but the
+               UX gain justifies it for this use case.
+
+    [pattern]  Sandbox execution pattern: create sandbox → execute code →
+               read output → destroy. Always set timeout (30s default).
+               Never reuse sandboxes across requests.
+
+    [commit]   Migrated code execution from Docker to E2B Firecracker
+               microVMs for faster sandbox boot times.
 ```
 
-Every commit you make from now on is captured, understood, and kept — forever, locally, privately.
+That's it. You commit. Continuum extracts **why**, not just what. Using the Claude CLI you already have.
 
----
+<br/>
 
-## What it captures
-
-Continuum watches your git commits and extracts what actually matters:
-
-- **Decisions** — *why* you made an architectural choice, not just what it was
-- **Patterns** — conventions and approaches that work in this codebase
-- **Context** — what you were working on, what problems you were solving
-
-After a few weeks, `continuum snapshot myproject` synthesizes everything into a living document:
-
-```markdown
-# Your Project — Context
-
-## Architecture
-- Chose Hono over Express — Cloudflare Workers requires edge-compatible runtime
-- D1 SQLite for persistence — no RETURNING clause, pattern: INSERT then SELECT
-
-## Decisions that matter
-- Replaced Docker with E2B Firecracker microVMs — 10x faster sandbox boot
-  (Docker cold start was blocking UX at 4-6s, E2B gets to 400ms)
-- Serial queue removed from streaming — Bun ReadableStream requires sync spawn in start()
-  (spent 3h on this deadlock, the fix is non-obvious)
-
-## Known gotchas
-- D1 writes serialize through primary region — batch or you'll hit latency walls
-- Worker bundle hard limit 10MB — audit dependencies before adding anything
-```
-
-A year from now, opening this project again — **everything is still there.**
-
----
-
-## Works everywhere
-
-Continuum exposes your memory via MCP — the universal protocol for AI tools.
-
-| Tool | Status |
-|------|--------|
-| Claude Code | ✅ Auto-configured on `init` |
-| Cursor | ✅ Auto-configured on `init` |
-| Cline / RooCline | Manual (2 lines) |
-| Continue.dev | Manual (2 lines) |
-| Windsurf | Manual (2 lines) |
-| Claude Desktop | Manual (2 lines) |
-| Zed | Manual (2 lines) |
-| Any tool with MCP | Manual (2 lines) |
-
-Your memory travels with you. Switch tools, switch machines — the context follows.
-
----
-
-## Quick start
-
-**Requires:** [Bun](https://bun.sh) + [Claude Code CLI](https://claude.ai/download) (free, used for extraction)
+## After a few weeks
 
 ```bash
-# Setup: detects git projects, configures your AI tools
-bunx continuum init
-
-# Start: runs in background, watches your commits
-bunx continuum start
-
-# Work normally. Make commits. Continuum does the rest.
-
-# After enough commits, generate your project's living document:
 continuum snapshot myproject
 ```
 
----
+Generates a living `CONTINUUM.md` — your project's entire brain:
 
-## Commands
+```markdown
+# myproject — Living Context
 
-```bash
-continuum init                     # Detect projects + configure Claude Code & Cursor
-continuum start                    # Start daemon + MCP server
-continuum snapshot [project]       # Generate living CONTINUUM.md from memories
-continuum status                   # Show projects and memory counts
-continuum add <project> <memory>   # Manually save something important
-continuum sync init                # Setup GitHub sync (private repo)
-continuum sync push                # Push memories to GitHub
-continuum sync pull                # Pull memories from GitHub
+## Architecture
+- Hono on Cloudflare Workers (not Express — needs edge-compatible runtime)
+- D1 SQLite for persistence (no RETURNING clause — pattern: INSERT then SELECT)
+- E2B Firecracker microVMs for code execution (replaced Docker, 10x faster boot)
+
+## Hard-won knowledge
+- Bun ReadableStream requires sync spawn in start() — async causes deadlock
+  (spent 3 hours debugging this, the fix is non-obvious)
+- D1 writes serialize through primary region — always batch writes
+- Worker bundle limit is 10MB — audit deps before adding anything
+
+## Patterns that work here
+- Serial queue for Claude CLI spawns (concurrent = race conditions)
+- AES-256-GCM for OAuth tokens (PBKDF2 100K iterations)
+- Zod validation at every API boundary, no exceptions
 ```
 
----
+Open this project in 2 years. **Everything is still there.**
 
-## Cross-device sync
+Your AI tools load this automatically. They know *everything* about your project from day one.
 
-Your memories can travel between machines using a private GitHub repo as backend. No cloud service, no new accounts — just git.
-
-```bash
-# First time: creates a private repo and configures sync
-continuum sync init
-
-# Push your memories to GitHub
-continuum sync push
-
-# On another machine: pull memories from GitHub
-continuum sync pull
-```
-
-**How it works:** Memories are exported as JSON files (one per project) into a private `<your-username>/continuum-memories` repo. The format is git-diffable, so you get full history of your memory evolution for free.
-
-**Auto-sync:** Enable in `~/.continuum/config.json` to push automatically after every extraction:
-
-```json
-{
-  "sync": {
-    "enabled": true,
-    "repo": "youruser/continuum-memories",
-    "autoSync": true
-  }
-}
-```
-
-**Requirements:** [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated.
+<br/>
 
 ---
 
-## Configuration
+<br/>
 
-All settings live in `~/.continuum/config.json`:
+## Works with everything
 
-```json
-{
-  "projects": [
-    { "path": "/Users/you/projects/myapp", "name": "myapp" }
-  ],
-  "port": 3100,
-  "model": "claude-haiku-4-5-20251001",
-  "ignore": [".env", "*.pem", "*.key", "node_modules", ".git", "dist"],
-  "sync": {
-    "enabled": false,
-    "repo": "",
-    "autoSync": false
-  }
-}
-```
+Continuum uses MCP — the universal protocol. One memory, every tool.
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `projects` | `[]` | Git repos to watch (auto-detected on `init`) |
-| `port` | `3100` | HTTP MCP server port |
-| `model` | `claude-haiku-4-5-20251001` | Claude model for extraction |
-| `ignore` | *(see above)* | File patterns to skip in diffs |
-| `sync.enabled` | `false` | Enable GitHub sync |
-| `sync.repo` | `""` | GitHub repo for sync (set by `sync init`) |
-| `sync.autoSync` | `false` | Auto-push after every extraction |
+| Tool | Setup |
+|------|-------|
+| **Claude Code** | Automatic on `init` |
+| **Cursor** | Automatic on `init` |
+| **Cline / RooCline** | 2 lines of JSON |
+| **Continue.dev** | 2 lines of JSON |
+| **Windsurf** | 2 lines of JSON |
+| **Claude Desktop** | 2 lines of JSON |
+| **Zed** | 2 lines of JSON |
+| **Any MCP client** | 2 lines of JSON |
 
----
+<details>
+<summary><strong>Manual MCP setup</strong> (for tools not auto-configured)</summary>
 
-## MCP setup (manual)
-
-For any tool that supports MCP, add this to its config:
+Add to your tool's MCP config:
 
 ```json
 {
@@ -195,74 +134,200 @@ For any tool that supports MCP, add this to its config:
 
 Claude Code: `~/.claude.json` · Cursor: `~/.cursor/mcp.json` · Others: check their docs.
 
+</details>
+
+<br/>
+
 ---
+
+<br/>
 
 ## How it works
 
 ```
-You commit code
-      ↓
-Continuum reads the diff (secrets filtered out automatically)
-      ↓
-Claude CLI extracts decisions + patterns (uses your existing subscription)
-      ↓
-Stored in ~/.continuum/memories.db (local SQLite, never leaves your machine)
-      ↓
-MCP server exposes them to any AI tool you use
-      ↓
-continuum snapshot synthesizes everything into a CONTINUUM.md
-      ↓
-Claude Code / Cursor load it automatically on every session
+git commit
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│  Continuum daemon (watching .git via FSEvents)  │
+├─────────────────────────────────────────────┤
+│                                             │
+│  1. Read diff (secrets auto-redacted)       │
+│  2. Claude CLI extracts decisions/patterns  │
+│  3. Store in local SQLite                   │
+│  4. Expose via MCP to all AI tools          │
+│                                             │
+└─────────────────────────────────────────────┘
+    │
+    ▼
+Claude Code, Cursor, Cline, Windsurf...
+all have your full project context instantly
 ```
 
-Zero cloud. Zero new API keys. Zero new subscriptions.
+<br/>
+
+## What you're NOT paying for
+
+| | |
+|---|---|
+| **Cloud backend** | None. `~/.continuum/` on your machine. |
+| **API keys** | None. Uses `claude -p` from your existing subscription. |
+| **New subscriptions** | None. Zero cost beyond what you already have. |
+| **Data leaving your machine** | Never. Unless you opt into git sync. |
+
+<br/>
 
 ---
+
+<br/>
+
+## Quick start
+
+**Requires:** [Bun](https://bun.sh) + [Claude Code CLI](https://claude.ai/download)
+
+```bash
+# Detects your git projects, configures Claude Code & Cursor
+bunx continuum init
+
+# Starts the daemon — watches commits in real-time
+bunx continuum start
+
+# That's it. Make commits normally. Continuum does the rest.
+```
+
+<br/>
+
+## Commands
+
+```bash
+continuum init                      # Setup — detect projects, configure AI tools
+continuum start                     # Start daemon + MCP server (port 3100)
+continuum status                    # Show projects and memory count
+continuum snapshot [project]        # Generate CONTINUUM.md — your project's brain
+continuum add <project> <text>      # Manually save a decision or insight
+continuum sync init                 # Setup cross-device sync (private GitHub repo)
+continuum sync push                 # Push memories to GitHub
+continuum sync pull                 # Pull memories from another machine
+```
+
+<br/>
+
+---
+
+<br/>
+
+## Cross-device sync
+
+Your memories travel between machines. No cloud service — just a private GitHub repo.
+
+```bash
+continuum sync init    # Creates private repo: <you>/continuum-memories
+continuum sync push    # Export & push
+continuum sync pull    # Pull & import on another machine
+```
+
+Enable auto-sync to push after every extraction:
+
+```json
+{
+  "sync": { "enabled": true, "autoSync": true }
+}
+```
+
+Memories are stored as git-diffable JSON — you get full version history of your memory evolution for free.
+
+**Requires:** [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated.
+
+<br/>
+
+---
+
+<br/>
 
 ## Security
 
-- **Everything stays local** — `~/.continuum/` on your machine, nowhere else
-- **Secrets are filtered** — diffs are scanned for API keys, tokens, and passwords before extraction. Matches are redacted.
-- **Sensitive files skipped** — `.env`, `.pem`, `.key`, and similar files are never read
-- **Extraction uses your Claude subscription** — not the API, not a new account
-- **Open source** — read exactly what runs on your machine
+| Threat | Protection |
+|--------|------------|
+| Secrets in diffs | 20+ regex patterns auto-redact API keys, tokens, passwords before extraction |
+| Sensitive files | `.env`, `.pem`, `.key`, `*secret*`, `*token*` — never read |
+| Data exfiltration | Everything stays in `~/.continuum/`. No network calls except MCP + optional sync |
+| Supply chain | Zero runtime dependencies. Pure Bun + SQLite |
+| Extraction privacy | Uses `claude -p` locally — your subscription, your machine |
+
+<br/>
 
 ---
 
-## What it costs
+<br/>
 
-Nothing. Extraction uses `claude -p` — the Claude CLI you already have. No new services, no new fees.
+## Configuration
+
+`~/.continuum/config.json`:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `projects` | `[]` | Git repos to watch (auto-detected on `init`) |
+| `port` | `3100` | MCP server port |
+| `model` | `claude-haiku-4-5-20251001` | Model for extraction |
+| `ignore` | `.env, *.pem, *.key...` | File patterns to skip |
+| `sync.enabled` | `false` | Enable GitHub sync |
+| `sync.autoSync` | `false` | Auto-push after extraction |
+
+<br/>
 
 ---
+
+<br/>
 
 ## The bigger picture
 
-This started as an AI context tool. But the real thing it does is give you a **permanent, searchable record of your entire career as a developer.**
+This isn't just an AI context tool.
 
-Every project. Every hard decision. Every pattern that works. Every bug you finally figured out.
+It's a **permanent, searchable record of your entire career as a developer.**
 
-In 5 years, you'll have a memory of everything you built. Not a portfolio — a *memory*. The reasoning, the tradeoffs, the moments that shaped how you think.
+Every project. Every hard decision. Every pattern that worked. Every bug that took 3 days to find.
+
+In 5 years, you'll have a memory of everything you built. Not a portfolio — a *memory*. The reasoning, the tradeoffs, the moments that shaped how you think about software.
 
 That's what Continuum is actually building.
 
+<br/>
+
 ---
+
+<br/>
+
+## Roadmap
+
+- [ ] **[sqlite-vec](https://github.com/asg017/sqlite-vec)** — semantic vector search
+- [ ] **Knowledge graph** — entity relationships across projects
+- [ ] **More backends** — Gemini CLI, Ollama, local models (no subscription needed)
+- [ ] **Team sync** — shared context across team members
+- [ ] **Menu bar app** — native macOS/Windows UI
+- [ ] **VS Code extension** — inline memory annotations
+- [ ] **Auto-tagging** — ML-powered categorization
+- [ ] **Memory decay** — smart forgetting of irrelevant details
+
+<br/>
 
 ## Contributing
 
-The core works. Here's where it can go further:
+PRs welcome. The core is ~800 lines of TypeScript. Read it in an afternoon.
 
-- **[sqlite-vec](https://github.com/asg017/sqlite-vec)** — semantic search instead of TF-IDF
-- **Windows support** — test `fs.watch` behavior, fix platform differences
-- **More extraction backends** — Gemini CLI, Ollama, local models (no subscription required)
-- **Team Mindspace** — share context between team members (requires a server)
-- **Swift menu bar app** — native macOS UI for managing memories
+```bash
+git clone https://github.com/devjoaocastro/continuum
+cd continuum
+bun install
+bun dev
+```
 
----
-
-## License
-
-MIT
+<br/>
 
 ---
 
-*Built in an afternoon. The kind of tool you wish had existed 5 years ago.*
+<p align="center">
+<strong>MIT License</strong> · Built by <a href="https://github.com/devjoaocastro">@devjoaocastro</a>
+</p>
+<p align="center">
+<em>The kind of tool you wish had existed 5 years ago.</em>
+</p>

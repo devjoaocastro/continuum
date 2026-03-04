@@ -1,7 +1,32 @@
 {
   "name": "continuum",
   "version": "0.1.0",
-  "description": "Universal AI memory daemon — your context, everywhere",
+  "description": "Your development memory. For life. — Watches git commits, extracts decisions & patterns via Claude CLI, serves context to any AI tool via MCP.",
+  "author": "Joao Castro <dev@joaocastro.com> (https://github.com/devjoaocastro)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devjoaocastro/continuum.git"
+  },
+  "homepage": "https://github.com/devjoaocastro/continuum",
+  "bugs": {
+    "url": "https://github.com/devjoaocastro/continuum/issues"
+  },
+  "keywords": [
+    "ai-memory",
+    "mcp",
+    "claude",
+    "context",
+    "git",
+    "developer-tools",
+    "ai-tools",
+    "cursor",
+    "cline",
+    "continuum",
+    "knowledge-base",
+    "sqlite",
+    "local-first"
+  ],
   "bin": {
     "continuum": "./src/index.ts"
   },

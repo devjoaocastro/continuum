@@ -1,0 +1,35 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: Describe the bug clearly and concisely.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `continuum start`
+        2. Make a commit
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "macOS 15.2 / Ubuntu 24.04 / Windows 11"
+    validations:
+      required: true
+  - type: input
+    id: bun-version
+    attributes:
+      label: Bun version
+      placeholder: "1.2.x"
+    validations:
+      required: true
